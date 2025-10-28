@@ -11,6 +11,8 @@ qt_add_executable(Autoclicker
     autoclicker.cpp
     autoclicker.h
     autoclicker.ui
+    nativeeventfilter.h
+    nativeeventfilter.cpp
 )
 
 target_link_libraries(Autoclicker
