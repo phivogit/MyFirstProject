@@ -16,6 +16,7 @@ class AutoClicker : public QMainWindow
     Q_OBJECT
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 public:
     AutoClicker(QWidget *parent = nullptr);
     ~AutoClicker();
@@ -26,11 +27,16 @@ private slots:
     void StopClick();
     void click(int speed);
     void panelChange();
+    void enableKeyChangeListen();
+    void disableKeyChangeListen();
 
 private:
     Ui::AutoClicker *ui;
     int mouseState = 0;
     bool running = 0;
+    bool listeningForKey = 0;
     NativeEventFilter *m_filter;
+    int newHotkey = 0;
+    Qt::KeyboardModifiers newKeyModifiers = Qt::NoModifier;
 };
 #endif // AUTOCLICKER_H

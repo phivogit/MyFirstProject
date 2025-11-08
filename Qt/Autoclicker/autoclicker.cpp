@@ -5,6 +5,7 @@
 #include <QShortcut>
 #include <QAbstractNativeEventFilter>
 #include "nativeeventfilter.h"
+#include <QKeyEvent>
 
 #define INIT_CSPEED "100"
 #define INIT_MOUSE 0
@@ -14,6 +15,13 @@ AutoClicker::AutoClicker(QWidget *parent)
     , ui(new Ui::AutoClicker)
 {
     ui->setupUi(this);
+    ui->mouseOption->setChecked(true);
+    this->setFocusPolicy(Qt::StrongFocus);
+    if (ui->mouseOption->isChecked()) ui->stackedWidget->setCurrentIndex(0);
+    else ui->stackedWidget->setCurrentIndex(1);
+    connect(ui->mouseOption, &QRadioButton::clicked, this, &AutoClicker::panelChange);
+    connect(ui->keyboardOption, &QRadioButton::clicked, this, &AutoClicker::panelChange);
+    // Init Mouse
     if (INIT_MOUSE == 0) ui->mouseInpLabel->setText("Left Mouse Button");
     else ui->mouseInpLabel->setText("Right Mouse Button");
     mouseState = INIT_MOUSE;
@@ -31,8 +39,20 @@ AutoClicker::AutoClicker(QWidget *parent)
     m_filter = new NativeEventFilter();
     qApp->installNativeEventFilter(m_filter);
     connect(m_filter, &NativeEventFilter::hotkeyPressed, this, &AutoClicker::StartClick);
+    // Init Keyboard
+    ui->KInpClickSpeed->setText(INIT_CSPEED);
+    ui->KButtonStop->setEnabled(false);
+    connect(ui->KchangeInpButton, &QPushButton::clicked, this, &AutoClicker::enableKeyChangeListen);
 }
 
+void AutoClicker::panelChange() {
+    if (ui->mouseOption->isChecked() == false) {
+        ui->stackedWidget->setCurrentIndex(1);
+    } else {
+        ui->stackedWidget->setCurrentIndex(0);
+    }
+}
+// Mouse
 void AutoClicker::click(int speed) {
     while (running == 1) {
         INPUT click = {0};
@@ -63,7 +83,6 @@ void AutoClicker::click(int speed) {
         Sleep(speed);
     }
 }
-
 void AutoClicker::StartClick() {
     int speed = getClickSpeed();
     running = 1;
@@ -75,6 +94,8 @@ void AutoClicker::StartClick() {
     ui->activateKeyButton->setEnabled(false);
     ui->ButtonStart->setEnabled(false);
     ui->ButtonStop->setEnabled(true);
+    ui->Header->setEnabled(false);
+    ui->changeMouseInpButton->setEnabled(false);
 }
 
 void AutoClicker::StopClick() {
@@ -84,6 +105,8 @@ void AutoClicker::StopClick() {
     ui->activateKeyButton->setEnabled(true);
     ui->ButtonStart->setEnabled(true);
     ui->ButtonStop->setEnabled(false);
+    ui->Header->setEnabled(true);
+    ui->changeMouseInpButton->setEnabled(true);
     qDebug() << "Stopped";
 }
 
@@ -96,13 +119,44 @@ void AutoClicker::handleMouseChange() {
         ui->mouseInpLabel->setText("Left Mouse Button");
     }
 }
-void AutoClicker::panelChange() {
 
-}
 int AutoClicker::getClickSpeed() {
     QString ClickSpeedText = ui->InpClickSpeed->text();
     int ClickSpeed = ClickSpeedText.toInt();
     return ClickSpeed;
+}
+// Keyboard
+void AutoClicker::keyPressEvent(QKeyEvent *event) {
+    if (this->listeningForKey) {
+        if (event->key() != Qt::Key_Control &&
+            event->key() != Qt::Key_Alt &&
+            event->key() != Qt::Key_Shift &&
+            event->key() != Qt::Key_Meta) {
+            if (event->key() == Qt::Key_Escape) {
+                AutoClicker::disableKeyChangeListen();
+                return;
+            }
+            this->newHotkey = event->key();
+            this->newKeyModifiers = event->modifiers();
+            QKeySequence newKeySequence(this->newKeyModifiers | this->newHotkey);
+            QString sequenceString = newKeySequence.toString(QKeySequence::NativeText);
+            ui->KKey->setText(sequenceString);
+            AutoClicker::disableKeyChangeListen();
+            event->accept();
+        }
+    }
+    QMainWindow::keyPressEvent(event);
+}
+void AutoClicker::enableKeyChangeListen() {
+    qDebug() << "Listening for hotkey...";
+    ui->KchangeInpButton->setEnabled(false);
+    listeningForKey = 1;
+    this->setFocus();
+}
+void AutoClicker::disableKeyChangeListen() {
+    qDebug() << "Stopped listening for hotkey.";
+    ui->KchangeInpButton->setEnabled(true);
+    listeningForKey = 0;
 }
 
 void AutoClicker::closeEvent(QCloseEvent *event) {
