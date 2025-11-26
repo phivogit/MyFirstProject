@@ -11,6 +11,7 @@ public:
     bool nativeEventFilter(const QByteArray &eventType, void *message, qintptr *result) override;
 signals:
     void hotkeyPressed();
+    void keyboardHotkeyPressed();
 };
 
 #endif // NATIVEEVENTFILTER_H
