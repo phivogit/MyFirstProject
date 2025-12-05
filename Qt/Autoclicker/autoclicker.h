@@ -36,6 +36,10 @@ private slots:
     void disableMouseHotKeyChangeListen();
     void enableHotKeyChangeListen();
     void disableHotKeyChangeListen();
+    void enableMouse();
+    void disableMouse();
+    void enableKeyboard();
+    void disableKeyboard();
 
 private:
     Ui::AutoClicker *ui;

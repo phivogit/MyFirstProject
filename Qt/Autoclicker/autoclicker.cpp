@@ -7,6 +7,8 @@
 #include "nativeeventfilter.h"
 #include <QKeyEvent>
 
+#define INIT_MOUSE_HOTKEY VK_F6
+#define INIT_KEYBOARD_HOTKEY VK_F7
 #define INIT_CSPEED "100"
 #define INIT_MOUSE 0
 #define INIT_KSPEED "100"
@@ -24,6 +26,7 @@ AutoClicker::AutoClicker(QWidget *parent)
     connect(ui->mouseOption, &QRadioButton::clicked, this, &AutoClicker::panelChange);
     connect(ui->keyboardOption, &QRadioButton::clicked, this, &AutoClicker::panelChange);
     // Init Mouse
+    newMouseHotKey = INIT_MOUSE_HOTKEY;
     if (INIT_MOUSE == 0) ui->mouseInpLabel->setText("Left Mouse Button");
     else ui->mouseInpLabel->setText("Right Mouse Button");
     mouseState = INIT_MOUSE;
@@ -42,7 +45,10 @@ AutoClicker::AutoClicker(QWidget *parent)
     qApp->installNativeEventFilter(m_filter);
     connect(ui->activateKeyButton, &QPushButton::clicked, this, &AutoClicker::enableMouseHotKeyChangeListen);
     connect(m_filter, &NativeEventFilter::hotkeyPressed, this, &AutoClicker::StartClick);
+    if (ui->enableButton->isChecked()) connect(ui->enableButton, &QCheckBox::clicked, this, &AutoClicker::disableMouse);
+    else connect(ui->enableButton, &QCheckBox::clicked, this, &AutoClicker::enableMouse);
     // Init Keyboard
+    newHotKey = INIT_KEYBOARD_HOTKEY;
     success = RegisterHotKey((HWND)this->winId(), 2, 0, VK_F7);
     if (success == 1) {
         qDebug() << "Registered hotkey";
@@ -54,6 +60,10 @@ AutoClicker::AutoClicker(QWidget *parent)
     newKeyClick = 'A';
     connect(ui->KchangeInpButton, &QPushButton::clicked, this, &AutoClicker::enableKeyChangeListen);
     connect(ui->KactivateKeyButton, &QPushButton::clicked, this, &AutoClicker::enableHotKeyChangeListen);
+    connect(ui->KButtonStart, &QPushButton::clicked, this, &AutoClicker::keyboardStartClick);
+    connect(ui->KButtonStop, &QPushButton::clicked, this, &AutoClicker::keyboardStopClick);
+    if (ui->KenableButton->isChecked()) connect(ui->KenableButton, &QCheckBox::clicked, this, &AutoClicker::disableKeyboard);
+    else connect(ui->KenableButton, &QCheckBox::clicked, this, &AutoClicker::enableKeyboard);
     connect(m_filter, &NativeEventFilter::keyboardHotkeyPressed, this, &AutoClicker::keyboardStartClick);
 }
 
@@ -152,6 +162,31 @@ UINT qtKeytoWinKey(int qtKey) {
     }
 }
 // Mouse
+void AutoClicker::enableMouse() {
+    ui->changeMouseInpButton->setEnabled(true);
+    ui->InpClickSpeed->setEnabled(true);
+    ui->activateKeyButton->setEnabled(true);
+    ui->ButtonStart->setEnabled(true);
+    ui->ButtonStop->setEnabled(true);
+    disconnect(ui->enableButton, &QCheckBox::clicked, this, &AutoClicker::enableMouse);
+    connect(ui->enableButton, &QCheckBox::clicked, this, &AutoClicker::disableMouse);
+    bool success = RegisterHotKey((HWND)this->winId(), 1, this->newMouseHotKeyModifiers, this->newMouseHotKey);
+    if (success) qDebug() << "Successfully registered mouse hotkey";
+    else qDebug() << "Failed to register mouse hotkey";
+    connect(m_filter, &NativeEventFilter::hotkeyPressed, this, &AutoClicker::StartClick);
+}
+void AutoClicker::disableMouse() {
+    ui->changeMouseInpButton->setEnabled(false);
+    ui->InpClickSpeed->setEnabled(false);
+    ui->activateKeyButton->setEnabled(false);
+    ui->ButtonStart->setEnabled(false);
+    ui->ButtonStop->setEnabled(false);
+    bool success = UnregisterHotKey((HWND)this->winId(), 1);
+    disconnect(ui->enableButton, &QCheckBox::clicked, this, &AutoClicker::disableMouse);
+    connect(ui->enableButton, &QCheckBox::clicked, this, &AutoClicker::enableMouse);
+    if (success) qDebug() << "Successfully unregistered mouse hotkey";
+    else qDebug() << "Failed to unregister mouse hotkey";
+}
 void AutoClicker::click(int speed) {
     while (running == 1) {
         INPUT click = {0};
@@ -194,7 +229,8 @@ void AutoClicker::StartClick() {
     ui->ButtonStart->setEnabled(false);
     ui->ButtonStop->setEnabled(true);
     ui->changeMouseInpButton->setEnabled(false);
-
+    ui->enableButton->setEnabled(false);
+    ui->InpClickSpeed->setReadOnly(true);
 }
 void AutoClicker::StopClick() {
     running = 0;
@@ -204,7 +240,8 @@ void AutoClicker::StopClick() {
     ui->ButtonStart->setEnabled(true);
     ui->ButtonStop->setEnabled(false);
     ui->changeMouseInpButton->setEnabled(true);
-    qDebug() << "Stopped";
+    ui->enableButton->setEnabled(true);
+    ui->InpClickSpeed->setReadOnly(false);
 }
 
 void AutoClicker::handleMouseChange() {
@@ -234,6 +271,12 @@ void AutoClicker::enableMouseHotKeyChangeListen() {
     qDebug() << "Listening for mouse hotkey...";
     ui->activateKeyButton->setEnabled(false);
     ui->Header->setEnabled(false);
+    ui->ButtonStart->setEnabled(false);
+    ui->ButtonStop->setEnabled(false);
+    ui->changeMouseInpButton->setEnabled(false);
+    ui->InpClickSpeed->setEnabled(false);
+    ui->enableButton->setEnabled(false);
+    UnregisterHotKey((HWND)this->winId(), 1);
     listeningForMouseHotKey = 1;
     this->setFocus();
 }
@@ -241,10 +284,40 @@ void AutoClicker::disableMouseHotKeyChangeListen() {
     qDebug() << "Listening for mouse hotkey...";
     ui->activateKeyButton->setEnabled(true);
     ui->Header->setEnabled(true);
+    ui->ButtonStart->setEnabled(true);
+    ui->ButtonStop->setEnabled(true);
+    ui->changeMouseInpButton->setEnabled(true);
+    ui->InpClickSpeed->setEnabled(true);
+    ui->enableButton->setEnabled(true);
     listeningForMouseHotKey = 0;
     this->setFocus();
 }
 // Keyboard
+void AutoClicker::enableKeyboard() {
+    ui->KchangeInpButton->setEnabled(true);
+    ui->KInpClickSpeed->setEnabled(true);
+    ui->KactivateKeyButton->setEnabled(true);
+    ui->KButtonStart->setEnabled(true);
+    ui->KButtonStop->setEnabled(true);
+    disconnect(ui->KenableButton, &QCheckBox::clicked, this, &AutoClicker::enableKeyboard);
+    connect(ui->KenableButton, &QCheckBox::clicked, this, &AutoClicker::disableKeyboard);
+    bool success = RegisterHotKey((HWND)this->winId(), 2, this->newHotKeyModifiers, this->newHotKey);
+    if(success) qDebug() << "Hotkey updated successfully";
+    else qDebug() << "Failed to register new hotkey";
+    connect(m_filter, &NativeEventFilter::keyboardHotkeyPressed, this, &AutoClicker::keyboardStartClick);
+}
+void AutoClicker::disableKeyboard() {
+    ui->KchangeInpButton->setEnabled(false);
+    ui->KInpClickSpeed->setEnabled(false);
+    ui->KactivateKeyButton->setEnabled(false);
+    ui->KButtonStart->setEnabled(false);
+    ui->KButtonStop->setEnabled(false);
+    bool success = UnregisterHotKey((HWND)this->winId(), 2);
+    disconnect(ui->KenableButton, &QCheckBox::clicked, this, &AutoClicker::disableKeyboard);
+    connect(ui->KenableButton, &QCheckBox::clicked, this, &AutoClicker::enableKeyboard);
+    if(success) qDebug() << "Keyboard hotkey unregistered successfully";
+    else qDebug() << "Failed to unregister keyboard hotkey";
+}
 void AutoClicker::keyboardStartClick() {
     int speed = getClickSpeed(1);
     ui->KInpClickSpeed->setReadOnly(true);
@@ -252,6 +325,7 @@ void AutoClicker::keyboardStartClick() {
     ui->KactivateKeyButton->setEnabled(false);
     ui->KButtonStart->setEnabled(false);
     ui->KButtonStop->setEnabled(true);
+    ui->KenableButton->setEnabled(false);
     disconnect(m_filter, &NativeEventFilter::keyboardHotkeyPressed, this, &AutoClicker::keyboardStartClick);
     connect(m_filter, &NativeEventFilter::keyboardHotkeyPressed, this, &AutoClicker::keyboardStopClick);
     running = 1;
@@ -264,6 +338,7 @@ void AutoClicker::keyboardStopClick() {
     ui->KactivateKeyButton->setEnabled(true);
     ui->KButtonStart->setEnabled(true);
     ui->KButtonStop->setEnabled(false);
+    ui->KenableButton->setEnabled(true);
     disconnect(m_filter, &NativeEventFilter::keyboardHotkeyPressed, this, &AutoClicker::keyboardStopClick);
     connect(m_filter, &NativeEventFilter::keyboardHotkeyPressed, this, &AutoClicker::keyboardStartClick);
     running = 0;
@@ -405,6 +480,9 @@ void AutoClicker::enableKeyChangeListen() {
     ui->KactivateKeyButton->setEnabled(false);
     ui->KchangeInpButton->setEnabled(false);
     ui->Header->setEnabled(false);
+    ui->KButtonStart->setEnabled(false);
+    ui->KButtonStop->setEnabled(false);
+    ui->KenableButton->setEnabled(false);
     listeningForKeyClick = 1;
     this->setFocus();
 }
@@ -413,6 +491,10 @@ void AutoClicker::enableHotKeyChangeListen() {
     ui->KactivateKeyButton->setEnabled(false);
     ui->KchangeInpButton->setEnabled(false);
     ui->Header->setEnabled(false);
+    ui->KButtonStart->setEnabled(false);
+    ui->KButtonStop->setEnabled(false);
+    ui->KenableButton->setEnabled(false);
+    UnregisterHotKey((HWND)this->winId(), 2);
     listeningForHotKey = 1;
     this->setFocus();
 }
@@ -421,6 +503,9 @@ void AutoClicker::disableKeyChangeListen() {
     ui->KactivateKeyButton->setEnabled(true);
     ui->KchangeInpButton->setEnabled(true);
     ui->Header->setEnabled(true);
+    ui->KButtonStart->setEnabled(true);
+    ui->KButtonStop->setEnabled(true);
+    ui->KenableButton->setEnabled(true);
     listeningForKeyClick = 0;
 }
 void AutoClicker::disableHotKeyChangeListen() {
@@ -428,6 +513,9 @@ void AutoClicker::disableHotKeyChangeListen() {
     ui->KactivateKeyButton->setEnabled(true);
     ui->KchangeInpButton->setEnabled(true);
     ui->Header->setEnabled(true);
+    ui->KButtonStart->setEnabled(true);
+    ui->KButtonStop->setEnabled(true);
+    ui->KenableButton->setEnabled(true);
     listeningForHotKey = 0;
 }
 
