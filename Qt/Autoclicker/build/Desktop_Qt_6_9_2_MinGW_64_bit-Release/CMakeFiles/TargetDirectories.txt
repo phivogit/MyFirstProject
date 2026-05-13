@@ -1,0 +1,9 @@
+D:/Hi/CD/MyFirstProject/Qt/Autoclicker/build/Desktop_Qt_6_9_2_MinGW_64_bit-Release/CMakeFiles/Autoclicker.dir
+D:/Hi/CD/MyFirstProject/Qt/Autoclicker/build/Desktop_Qt_6_9_2_MinGW_64_bit-Release/CMakeFiles/edit_cache.dir
+D:/Hi/CD/MyFirstProject/Qt/Autoclicker/build/Desktop_Qt_6_9_2_MinGW_64_bit-Release/CMakeFiles/rebuild_cache.dir
+D:/Hi/CD/MyFirstProject/Qt/Autoclicker/build/Desktop_Qt_6_9_2_MinGW_64_bit-Release/CMakeFiles/list_install_components.dir
+D:/Hi/CD/MyFirstProject/Qt/Autoclicker/build/Desktop_Qt_6_9_2_MinGW_64_bit-Release/CMakeFiles/install.dir
+D:/Hi/CD/MyFirstProject/Qt/Autoclicker/build/Desktop_Qt_6_9_2_MinGW_64_bit-Release/CMakeFiles/install/local.dir
+D:/Hi/CD/MyFirstProject/Qt/Autoclicker/build/Desktop_Qt_6_9_2_MinGW_64_bit-Release/CMakeFiles/install/strip.dir
+D:/Hi/CD/MyFirstProject/Qt/Autoclicker/build/Desktop_Qt_6_9_2_MinGW_64_bit-Release/CMakeFiles/Autoclicker_autogen_timestamp_deps.dir
+D:/Hi/CD/MyFirstProject/Qt/Autoclicker/build/Desktop_Qt_6_9_2_MinGW_64_bit-Release/CMakeFiles/Autoclicker_autogen.dir
